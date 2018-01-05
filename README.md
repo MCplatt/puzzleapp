@@ -2,6 +2,7 @@
 Personal project that is meant as a portfolio peace
 Disign Doc
 ------------------------------------------------
+
 =convert picture to black and white
 	-TODO: prod for doing this cess picture to be more easily/accuratly scanned
 =scan every (pixeltotal)/300 lines x and y axis ,
