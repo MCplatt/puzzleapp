@@ -4,6 +4,7 @@ Disign Doc
 ------------------------------------------------
 
 =convert picture to black and white
+
 	-TODO: prod for doing this cess picture to be more easily/accuratly scanned
 =scan every (pixeltotal)/300 lines x and y axis ,
 	-TODO: have gaussian distrabution so more scans are near the middle of the photo to cut down on use less areas of the photo
