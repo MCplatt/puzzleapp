@@ -6,12 +6,66 @@
 #include<vector>
 #include<iostream>
 #include<conio.h>           // may have to modify this line if not using Windows
+#include <algorithm>>
 
 using namespace std;
 using namespace cv;
-struct node;
-bool operator<(const node& a, const node& b);
-void nodeCalc(Mat &src, node curr,node prev, node end);
+//bool operator<(const node& a, const node& b);
+//void nodeCalc(Mat &src, node &curr, node &prev, node &exit);
+
+//Rough node class implimentation----------------------------------
+struct node {
+	int value;
+	int Hval;
+	int Pval;
+	int currX;
+	int currY;
+	int prevX;
+	int prevY;
+	void operator=(const node& a);
+};
+
+bool operator<(const node& a, const node& b) {
+	return (a.Hval + a.Pval) < (b.Hval + b.Pval);
+}
+bool operator!=(const node& a, const node& b)
+{
+	if ((a.currX == b.currX) && (a.currY == b.currY))
+	{
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+}
+bool operator==(const node& a, const node& b)
+{
+	if ((a.currX == b.currX) && (a.currY == b.currY))
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void node::operator=(const node& a)
+{
+	this->currX = a.currX;
+	this->currY = a.currY;
+	this->Hval = a.Hval;
+	this->prevX = a.prevX;
+	this->prevY = a.prevY;
+	this->Pval = a.Pval;
+	this->value = a.value;
+}
+
+node openSmallest(vector<node> &vec);
+void openInsert(vector<node> &vec, node nod);
+void openReplace(vector<node> &vec, node nod);
+void openRemove(vector<node> &vec, node nod);
 
 int main() {
 	try {
@@ -219,9 +273,8 @@ int main() {
 		imwrite("result.jpg", resized);
 
 
-		vector<vector<int>> adj;
-		vector<int> closed;
-		priority_queue<node> open;
+		vector<node> closed;
+		vector<node> open;
 		//start node set to (318,301), pval 0
 		//create end
 		node end;
@@ -238,33 +291,68 @@ int main() {
 		start.currY = 301;
 		start.Pval = 0;
 		start.Hval = abs(max((start.currX - end.currX), (start.currY - end.currX)));
-		start.value = int(src.at<uchar>(start.currX, start.currY)); //assumed to be 255 already
+		start.value = int(resized.at<uchar>(start.currX, start.currY)); //assumed to be 255 already
 		start.prevX = 318;
 		start.prevY = 301;
 
-		node curr;
+		node curr = start;
+		node next;
+		int nextx;
+		int nexty;
+
 		//WHILE LOOP TILL end is found
 		while (end != curr)
 		{
 			//surrounding nodes added to list
-			
-			//for nodes in surrounding nodes
-				//node.Hval checked (curr node, end node) 
-				//node.pval == curr.pval + 1 (curr node, prev node)
-				//fval calculated (Hval + Pval)
-				//node added to open
-			//current node added to closed
-
-			//lowest node in open = curr
-			//
+			for (int i = -1; i < 2; i++)
+			{
+				if (((curr.currX + i) == -1) || ((curr.currX + i) > resized.cols))// keeps from out of bounds error
+				{
+					continue;
+				}
+				for (int y = -1; y < 2; y++)
+				{
+					if (((curr.currY + i) == -1) || ((curr.currY + i) > resized.rows))// keeps from out of bounds error
+					{
+						continue;
+					}
+					if ((i == 0) && (y == 0)) //prevent calc of current node
+					{
+						continue;
+					}
+					nextx = curr.currX + i;
+					nexty = curr.currY + y;
+					//calc next node------------------------------
+					next.currX = nextx;
+					next.currY = nexty;
+					next.Pval = curr.Pval + 1;
+					next.Hval = max(abs(nextx - end.currX), abs(nexty - end.currX));
+					next.value = int(resized.at<uchar>(nextx, nexty)); 
+					if ((next.value == 2) || (next.value < 250)) //2 closed no action, >250 is a black tile no action
+					{
+						continue;
+					}
+					next.prevX = curr.currX;
+					next.prevY = curr.currY;
+					//add to the a.star vectors----------------------
+				    if (next.value == 1)
+					{
+						openReplace(open, next);
+					}
+					else
+					{
+						openInsert(open, next);
+					}
+					resized.at<uchar>(nextx, nexty) = 1;
+				};
+			};
+			closed.insert(closed.begin(), curr);
+			openRemove(open, curr);
+			curr = openSmallest(open);
+			cout << curr.currX << ", " << curr.currY << endl;
 		}
-			
-
-
-
-
-		cv::waitKey(0);                 // hold windows open until user presses a key
 		
+		cv::waitKey(0);                 // hold windows open until user presses a key
 		return(0);
 	}
 	catch (cv::Exception & e)
@@ -273,31 +361,69 @@ int main() {
 		cv::waitKey(0);
 	}
 }
-
-struct node {
-	int value;
-	int Hval;
-	int Pval;
-	int currX;
-	int currY;
-	int prevX;
-	int prevY;
-};      
-
-bool operator<(const node& a, const node& b) {
-	return a.value > b.value;
-}
-bool operator!=(const node& a, const node& b)
+//OPEN VECTOR MEMBER FUNCTIONS--------------------------------------
+node openSmallest(vector<node> &vec) //find smallest
 {
-	if ((a.currX == b.currX) && (a.currY == b.currY))
+	int index = 0;
+	node smallest = vec[0];
+	for (int i = 1; i < int(vec.size()); i++)
 	{
-		return true;
+		if (vec[i] < smallest)
+		{
+			smallest = vec[i];
+			index = i;
+
+		}
 	}
-	else
+	vec.erase(vec.begin() + index);
+	return smallest;
+}
+void openRemove(vector<node> &vec, node nod)
+{
+	for (vector<node>::iterator itr = vec.begin(); itr != vec.end(); itr++)
 	{
-		return false;
+		if ((itr->currX ==  nod.currX) && (itr->currY == nod.currY))
+		{
+			vec.erase(itr);
+			return;
+		}
+
 	}
 }
+void openReplace(vector<node> &vec, node nod)//replace node at equal coordinate
+{
+	for (int i = 1; i < int(vec.size()); i++)
+	{
+		if ((vec[i].currX == nod.currX) && (vec[i].currY == nod.currY))
+		{
+			vec[i] = nod;
+			return;
+		}
+	}
+}
+void openInsert(vector<node> &vec, node nod)//insert nodes in least to greatest
+{
+	if (int(vec.size()) == 0)
+	{
+		vec.push_back(nod);
+		return;
+	}
+	else if (int(vec.size()) > 0)
+	{
+		
+		for (vector<node>::iterator itr = vec.begin(); itr != vec.end(); itr++)
+		{
+			if ((itr->Hval + itr->Pval) > (nod.Hval + nod.Pval))
+			{
+				vec.insert(itr, nod);
+				return;
+			}
+			
+		}
+	}
+}
+
+/*
 void nodeCalc(Mat &src, node &curr,node &prev, node &exit)
 {
 	if (curr.value == -2 || curr.value == 0)//if already closed(-2) or wall (0) do nothing
@@ -316,3 +442,4 @@ void nodeCalc(Mat &src, node &curr,node &prev, node &exit)
 	}
 	
 }
+*/
