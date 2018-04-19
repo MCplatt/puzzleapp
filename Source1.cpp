@@ -5,56 +5,32 @@
 #include<math.h>
 #include<vector>
 #include<iostream>
-#include<conio.h>           // may have to modify this line if not using Windows
-#include <algorithm>>
-
+#include<conio.h>       // may have to modify this line if not using Windows
+#include <algorithm>
 using namespace std;
 using namespace cv;
 //bool operator<(const node& a, const node& b);
 //void nodeCalc(Mat &src, node &curr, node &prev, node &exit);
 
+
+void onMouse(int evt, int x, int y, int flags, void* param) {
+	if (evt == CV_EVENT_LBUTTONDOWN) {
+		std::vector<cv::Point>* ptPtr = (std::vector<cv::Point>*)param;
+		ptPtr->push_back(cv::Point(x, y));
+	}
+}
+
 //Rough node class implimentation----------------------------------
 struct node {
 	int value;
-	int Hval;
-	int Pval;
+	int Hval;//distance (dx + dy) between node and the end node
+	int Pval;//number of nodes away from from start node
 	int currX;
 	int currY;
 	int prevX;
 	int prevY;
 	void operator=(const node& a);
 };
-
-bool operator<(const node& a, const node& b) {
-	return (a.Hval + a.Pval) < (b.Hval + b.Pval);
-}
-
-bool operator<=(const node& a, const node& b) {
-	return (a.Hval + a.Pval) <= (b.Hval + b.Pval);
-}
-bool operator>=(const node& a, const node& b) {
-	return (a.Hval + a.Pval) >= (b.Hval + b.Pval);
-}
-bool operator!=(const node& a, const node& b){
-	if ((a.currX == b.currX) && (a.currY == b.currY))
-	{
-		return false;
-	}
-	else
-	{
-		return true;
-	}
-}
-bool operator==(const node& a, const node& b){
-	if ((a.currX == b.currX) && (a.currY == b.currY))
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
 
 void node::operator=(const node& a)
 {
@@ -67,6 +43,38 @@ void node::operator=(const node& a)
 	this->value = a.value;
 }
 
+bool operator<(const node& a, const node& b) { //uses (Hval + Pval) to determine size
+	return (a.Hval + a.Pval) < (b.Hval + b.Pval);
+}
+bool operator<=(const node& a, const node& b) {//uses (Hval + Pval) to determine size
+	return (a.Hval + a.Pval) <= (b.Hval + b.Pval);
+}
+bool operator>=(const node& a, const node& b) {//uses (Hval + Pval) to determine size
+	return (a.Hval + a.Pval) >= (b.Hval + b.Pval);
+}
+bool operator!=(const node& a, const node& b){//Uses (x,y) to determine identity
+	if ((a.currX == b.currX) && (a.currY == b.currY))
+	{
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+}
+bool operator==(const node& a, const node& b){//Uses (x,y) to determine identity
+	if ((a.currX == b.currX) && (a.currY == b.currY))
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+
+
 node openSmallest(vector<node> &vec,node end);
 void openInsert(vector<node> &vec, node nod);
 void openReplace(vector<node> &vec, node nod);
@@ -76,7 +84,9 @@ int main() {
 	try {
 		cv::Mat imgOriginal;        // input image
 		cv::Mat imgGrayscale;       // grayscale of input image
-		cv::Mat imgBlurred;         // intermediate blured image
+		cv::Mat imgMulty;
+		cv::Mat imgEroded;
+		//::Mat imgBlurred;         // intermediate blured image
 		//cv::Mat imgCanny;           // Canny edge image
 
 		imgOriginal = cv::imread("rlmaze.jpg");          // open image
@@ -86,45 +96,58 @@ int main() {
 			_getch();                                               // may have to modify this line if not using Windows
 			return(0);                                              // and exit program
 		}
-		//std::cout << "grayscale" << std::endl;
+
+		//Make image black&white, clean up and make clear (multy *2, erode 5X5)----------------------------------------------------------
+		cv::namedWindow("imgOriginal", CV_WINDOW_NORMAL);
+		cv::imshow("imgOriginal", imgOriginal);     // show windows
+
 		cv::cvtColor(imgOriginal, imgGrayscale, CV_BGR2GRAY);       // convert to grayscale
 
-		//cv::GaussianBlur(imgGrayscale,          // input image
-		//	imgBlurred,                         // output image
-		//	cv::Size(9, 9),                     // smoothing window width and height in pixels
-		//	1.5);                               // sigma value, determines how much the image will be blurred
-		//medianBlur(imgGrayscale, imgBlurred, 5);
-		//cv::Canny(imgBlurred,           // input image
-		//	imgCanny,                   // output image
-		//	82,                         // low threshold
-		//	164);                       // high threshold
+		//cv::namedWindow("imgGrayscale", CV_WINDOW_NORMAL);        // or CV_WINDOW_AUTOSIZE for a fixed size window matching the resolution of the image
+		//cv::imshow("imgGrayscale", imgGrayscale);
 
+		cv::multiply(imgGrayscale,2, imgMulty);
 
-		// declare windows
-		cv::namedWindow("imgOriginal", CV_WINDOW_NORMAL);     // note: you can use CV_WINDOW_NORMAL which allows resizing the window
-		cv::namedWindow("imgGrayscale", CV_WINDOW_NORMAL);        // or CV_WINDOW_AUTOSIZE for a fixed size window matching the resolution of the image
-		//cv::namedWindow("canny", CV_WINDOW_NORMAL);
-		//cv::namedWindow("blurred", CV_WINDOW_NORMAL);							// CV_WINDOW_AUTOSIZE is the default
+		//cv::namedWindow("imgMulty", CV_WINDOW_NORMAL);        // or CV_WINDOW_AUTOSIZE for a fixed size window matching the resolution of the image
+		//cv::imshow("imgMulty", imgMulty);
 
-		cv::imshow("imgOriginal", imgOriginal);     // show windows
-		cv::imshow("imgGrayscale", imgGrayscale);
-		//cv::imshow("canny", imgCanny);
-		//cv::imshow("blurred", imgBlurred);
-		/*Mat opened;
-		int morph_size = 1;
-		Mat element = getStructuringElement(MORPH_RECT, Size(2 * morph_size + 1, 2 * morph_size + 1), Point(-1, -1));
-		morphologyEx(imgGrayscale, opened, MORPH_OPEN, element, Point(-1, -1), 2);
-		cv::namedWindow("opened", CV_WINDOW_NORMAL);
-		cv::imshow("opened", opened);*/
+		cv::imwrite("imgTest.png", imgMulty);
 
-		//use the grea
-		cv::Mat src = imgGrayscale;
+		//cv:Mat kernal(2, 2, CV_8UC3, Scalar(1));
+		int erosion_type = 1;
+		Mat element = getStructuringElement(erosion_type,Size(5,5),Point(-1,-1));
+		erode(imgMulty, imgEroded, element);
+		
+		cv::imwrite("imgTest.png", imgEroded);
+		//scan image for line size-------------------------------------------------
+		cv::Mat src = imgEroded;
 		int count = 0;
 		int thresh = 127;
 		std::vector<int> widths;
 		std::vector<int> heights;
-		int RowIter = (src.rows / 300);
-		int ColIter = (src.cols / 300);
+		int RowIter;
+		int ColIter;
+		int RowIterStart = 0;
+		int ColIterStart = 0;
+		int RowEnd;
+		int ColEnd;
+		if ((src.rows < 900) || (src.cols < 900))//if the image is less than 600x600 px scan whole pic
+		{
+			RowIter = (src.rows / 300);
+			ColIter = (src.cols / 300);
+			RowEnd = src.rows;
+			ColEnd = src.cols;
+		}
+		else//if larger than 900x900, scan the middle 1/3 of the pic for 300 lines
+		{
+			RowIterStart = (src.rows / 3);
+			ColIterStart = (src.cols / 3);
+		    RowIter = (RowIterStart / 300);
+			ColIter = (ColIterStart / 300);
+			RowEnd = RowIterStart * 2;
+			ColEnd = ColIterStart * 2;
+		}
+		
 		if (RowIter == 0)
 		{
 			RowIter = 1;
@@ -133,10 +156,10 @@ int main() {
 		{
 			ColIter = 1;
 		}
-
-		for (int x = 0; x < src.rows; (x += RowIter)) {
+		//Scan Rows----------------
+		for (int x = RowIterStart; x < RowEnd; (x += RowIter)) {
 			//std::cout << "row" <<  std::endl;
-			for (int y = 1; y < src.cols; (y += ColIter)) {
+			for (int y = ColIterStart; y < ColEnd; (y += ColIter)) {
 				//std::cout << int(src.at<uchar>(x, y)) << " ";
 				if (int(src.at<uchar>(x, y)) < thresh) {
 					count++;
@@ -157,9 +180,10 @@ int main() {
 			}
 		}
 		count = 0;
-		for (int x = 0; x < src.cols ; (x += ColIter)) {
+		//Scan Columns------------------- 
+		for (int x = ColIterStart; x < ColEnd ; (x += ColIter)) {
 			//std::cout << "row" << std::endl;
-			for (int y = 1; y < src.rows; (y += RowIter)) {
+			for (int y = RowIterStart; y < RowEnd; (y += RowIter)) {
 				//std::cout << int(src.at<uchar>(y, x)) << " ";
 				if (int(src.at<uchar>(y, x)) < thresh) {
 					count++;
@@ -179,7 +203,7 @@ int main() {
 
 			}
 		}
-		//cv::imshow("src", src);
+
 		std::cout << "----------------------------Widths-------------------------      " << std::endl;
 		int k = 0;
 		int median = 0;
@@ -249,7 +273,7 @@ int main() {
 		int sideLen = (2 * area) / hypo;
 
 		cout << "side length = " << sideLen << endl;
-		sideLen = sideLen/3.5;
+		sideLen = sideLen;
 		Mat resized;
 
 
@@ -262,24 +286,44 @@ int main() {
 			//std::cout << "row" <<  std::endl;
 			for (int y = 0; y < resized.cols; y++) {
 				//std::cout << int(src.at<uchar>(x, y)) << " ";
-				if (int(resized.at<uchar>(x, y)) < 127) {
+				if (int(resized.at<uchar>(x, y)) < 200) {
 					resized.at<uchar>(x, y) = 0;
 				}
-				else if (int(resized.at<uchar>(x, y)) >= 127) {
+				else if (int(resized.at<uchar>(x, y)) >= 200) {
 					resized.at<uchar>(x, y) = 255;
 				}
 			}
 		}
 	
-		cv::imshow("resized", resized);
-		imwrite("result.jpg", resized);
+		//cv::imshow("resized", resized);
+		//imwrite("result.jpg", resized);
 
+		cv::namedWindow("Output Window");
+		vector<Point> points;
+		cv::setMouseCallback("Output Window", onMouse, (void*)&points);
+		int X, Y;
+		bool flag = true;
+		while (flag)
+		{
+			cv::imshow("Output Window", resized);
+			waitKey(1);
+			if (points.size() > 2) //we have 2 points
+			{
+				cout << "X and Y coordinates are given below" << endl;
+				cout << points[0].x << '\t' << points[0].y << endl; 
+				cout << points[1].x << '\t' << points[1].y << endl; 
+				resized.at<uchar>(points[0].x, points[0].y) = 100;
+				resized.at<uchar>(points[1].x, points[1].y) = 100;
+				flag = false;
+			}
+
+		}
 		
 		//start node set to (318,301), pval 0
 		//create end---------------------------
 		node end;
-		end.currX = 307;
-		end.currY = 440;
+		end.currX = points[1].y;
+		end.currY = points[1].x;
 		end.Pval = 0;
 		end.Hval = 0;
 		end.value = 255;
@@ -287,8 +331,8 @@ int main() {
 		end.prevY = 0;
 		//set start value-----------------------
 		node start;
-		start.currX = 252;
-		start.currY = 267;
+		start.currX = points[0].y;
+		start.currY = points[0].x;
 		start.Pval = 0;
 		start.Hval = abs(max((start.currX - end.currX), (start.currY - end.currX)));
 		start.value = int(resized.at<uchar>(start.currX, start.currY)); //assumed to be 255 already
@@ -336,6 +380,7 @@ int main() {
 					next.currY = nexty;
 					next.Pval = curr.Pval + 1;
 					next.Hval = abs(nextx - end.currX) + abs(nexty - end.currY);
+
 					if (next.Hval > curr.Hval)
 				    {
 						next.Hval = (next.Hval * 1.5);
@@ -366,32 +411,37 @@ int main() {
 			closed.insert(closed.begin(), curr);
 			curr = openSmallest(open, end);
 			openRemove(open, curr);
-			//Debug----cout << curr.currX << ", " << curr.currY << "  Hval:" << curr.Hval << "  Pval:" << curr.Pval << endl;     
+			//cout << curr.currX << ", " << curr.currY << "  Hval:" << curr.Hval << "  Pval:" << curr.Pval << endl;     
 			
 		}
-		imwrite("result.jpg", resized);
 		cv::imshow("resized", resized);
+		cv::waitKey(1);
+		imwrite("result.jpg", resized);
 		
+		cv::namedWindow("Final", CV_WINDOW_NORMAL);
 		int closeX = end.currX;
 		int closeY = end.currY;
 
-		for (int i = (int(closed.size()) - 1); i != 0; i--)
+		for (int i = 0; i < int(closed.size()); i++)
 		{
 			
-			src.at<uchar>(closeX * sideLen, closeY * sideLen) = 0;
-			if (i = (int(closed.size()) - 1))
+			resized.at<uchar>(closeY , closeX) = 255;
+			if (i == 0)
 			{
-				closeX = closed[i].prevX;
-				closeY = closed[i].prevY;
+				closeX = closed[i].prevY;
+				closeY = closed[i].prevX;
 			}
-			else if ((closed[i].currX == closeX) && (closed[i].currY == closeY))
+			else if ((closed[i].currX == closeY) && (closed[i].currY == closeX))
 			{
 				cout << "X: " << closeX << "   Y: " << closeY << "    Path: "<< closed[i].Pval << endl;
-				closeX = closed[i].prevX;
-				closeY = closed[i].prevY;
+				closeX = closed[i].prevY;
+				closeY = closed[i].prevX;
+				cv::imshow("Final", resized);
+				cv::waitKey(1);
 			}
+			
 		}
-		cv::imshow("Final", src);
+		
 		cv::waitKey(0);                 // hold windows open until user presses a key
 		return(0);
 	}
@@ -440,7 +490,7 @@ void openReplace(vector<node> &vec, node nod)
 	{
 		if ((vec[i].currX == nod.currX) && (vec[i].currY == nod.currY))//find node at equal coordinate
 		{
-			if ((vec[i].Pval + vec[i].Hval) <= (nod.Pval + nod.Hval))
+			if ((vec[i].Pval) >= (nod.Pval))
 			{
 				vec[i] = nod;
 				return;
