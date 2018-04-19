@@ -28,8 +28,14 @@ struct node {
 bool operator<(const node& a, const node& b) {
 	return (a.Hval + a.Pval) < (b.Hval + b.Pval);
 }
-bool operator!=(const node& a, const node& b)
-{
+
+bool operator<=(const node& a, const node& b) {
+	return (a.Hval + a.Pval) <= (b.Hval + b.Pval);
+}
+bool operator>=(const node& a, const node& b) {
+	return (a.Hval + a.Pval) >= (b.Hval + b.Pval);
+}
+bool operator!=(const node& a, const node& b){
 	if ((a.currX == b.currX) && (a.currY == b.currY))
 	{
 		return false;
@@ -39,8 +45,7 @@ bool operator!=(const node& a, const node& b)
 		return true;
 	}
 }
-bool operator==(const node& a, const node& b)
-{
+bool operator==(const node& a, const node& b){
 	if ((a.currX == b.currX) && (a.currY == b.currY))
 	{
 		return true;
@@ -62,7 +67,7 @@ void node::operator=(const node& a)
 	this->value = a.value;
 }
 
-node openSmallest(vector<node> &vec);
+node openSmallest(vector<node> &vec,node end);
 void openInsert(vector<node> &vec, node nod);
 void openReplace(vector<node> &vec, node nod);
 void openRemove(vector<node> &vec, node nod);
@@ -137,8 +142,16 @@ int main() {
 					count++;
 				}
 				if ((int(src.at<uchar>(x, y - 1)) <= thresh) && (int(src.at<uchar>(x, y)) > thresh)) {
-					widths.push_back(count);
-					count = 0;
+					if (count == 0)
+					{
+
+					}
+					else
+					{
+						widths.push_back(count);
+						count = 0;
+					}
+					
 				}
 
 			}
@@ -152,8 +165,16 @@ int main() {
 					count++;
 				}
 				if ((int(src.at<uchar>(y - 1, x)) <= thresh) && (int(src.at<uchar>(y, x)) > thresh)) {
-					heights.push_back(count);
-					count = 0;
+					if (count == 0)
+					{
+
+					}
+					else
+					{
+						heights.push_back(count);
+						count = 0;
+					}
+					
 				}
 
 			}
@@ -187,6 +208,7 @@ int main() {
 		std::cout << "   Lower Quartile   " << lowerQT / lowerSize << " " << endl;
 		std::cout << "   SizeM     " << widths.size() << " " << endl;
 		std::cout << "   MEDIAN   "<< median << " " << endl;
+		int Wmed = median;
 		int WLQ = lowerQT / lowerSize;
 		std::cout << "----------------------------Heights----------------------------" << std::endl;
 		k = 0;
@@ -218,9 +240,10 @@ int main() {
 		std::cout << "   SizeM     " << heights.size() << " " << endl;
 		std::cout << "   MEDIAN   " << median << " " << endl;
 		
-		 
+		int Hmed = median;
 		int HLQ = lowerQT / lowerSize;
-		
+		//int hypo = sqrt(pow(Hmed, 2) + pow(Wmed, 2));
+		//int area = ((Hmed*Wmed) / 2);
 		int hypo = sqrt(pow(HLQ, 2) + pow(WLQ, 2));
 		int area = ((HLQ*WLQ) / 2);
 		int sideLen = (2 * area) / hypo;
@@ -229,66 +252,43 @@ int main() {
 		sideLen = sideLen/3.5;
 		Mat resized;
 
-		for (int x = 0; x < src.rows; x++) {
+
+
+		
+
+		resize(src, resized, cv::Size((src.rows / sideLen), (src.cols / sideLen)) , 1 / sideLen, 1 / sideLen, INTER_AREA);
+		
+		for (int x = 0; x < resized.rows; x++) {
 			//std::cout << "row" <<  std::endl;
-			for (int y = 0; y < src.cols; y++) {
+			for (int y = 0; y < resized.cols; y++) {
 				//std::cout << int(src.at<uchar>(x, y)) << " ";
-				if (int(src.at<uchar>(x, y)) < 127) {
-					src.at<uchar>(x, y) = 0;
+				if (int(resized.at<uchar>(x, y)) < 127) {
+					resized.at<uchar>(x, y) = 0;
 				}
-				else if (int(src.at<uchar>(x, y)) >= 127) {
-					src.at<uchar>(x, y) = 255;
+				else if (int(resized.at<uchar>(x, y)) >= 127) {
+					resized.at<uchar>(x, y) = 255;
 				}
 			}
 		}
-
-		
-
-		resize(src, resized, cv::Size((src.rows / sideLen), (src.cols / sideLen)) , 1 / sideLen, 1 / sideLen, INTER_NEAREST);
-		
-		//for (int x = 1; x < resized.rows - 1 ; x++) {
-		//	//std::cout << "row" <<  std::endl;
-		//	for (int y = 1; y < resized.cols - 1 ; y++) {
-		//		if (int(resized.at<uchar>(x, y)) == 1)
-		//		{
-		//			y++;
-		//		}
-		//		if (y < resized.cols - 1)
-		//		{}
-		//		//std::cout << int(src.at<uchar>(x, y)) << " ";
-		//		else if(int(resized.at<uchar>(x, y)) == 0)
-		//		{
-		//			//resized.at<uchar>(x + 1, y) = 1;
-		//			//resized.at<uchar>(x - 1, y) = 1;
-		//			//resized.at<uchar>(x, y + 1) = 1;
-		//			//resized.at<uchar>(x, y - 1) = 1;
-		//			//imshow("change", resized);
-		//		}
-		//	}
-		//}
-
-		
-		
+	
 		cv::imshow("resized", resized);
 		imwrite("result.jpg", resized);
 
-
-		vector<node> closed;
-		vector<node> open;
+		
 		//start node set to (318,301), pval 0
-		//create end
+		//create end---------------------------
 		node end;
-		end.currX = 806;
-		end.currY = 604;
+		end.currX = 307;
+		end.currY = 440;
 		end.Pval = 0;
 		end.Hval = 0;
 		end.value = 255;
 		end.prevX = 0;
 		end.prevY = 0;
-		//set start value
+		//set start value-----------------------
 		node start;
-		start.currX = 318;
-		start.currY = 301;
+		start.currX = 252;
+		start.currY = 267;
 		start.Pval = 0;
 		start.Hval = abs(max((start.currX - end.currX), (start.currY - end.currX)));
 		start.value = int(resized.at<uchar>(start.currX, start.currY)); //assumed to be 255 already
@@ -300,19 +300,28 @@ int main() {
 		int nextx;
 		int nexty;
 
-		//WHILE LOOP TILL end is found
-		while (end != curr)
+		
+		//A* Algorithm ------------------------------------
+		//loops from node to node till the current node is the end node
+
+		vector<node> closed; //nodes that have been touched
+		vector<node> open; // adjacent nodes that have been discovered
+	    //while c is not at the end node
+		while (end != curr) 
 		{
-			//surrounding nodes added to list
+			/*if ((curr.currX == 575) && (curr.currY == 446))
+			{int pie = 0;}  stops a certain node*/
+
+			//surrounding nodes added to open vector F(x(y))
 			for (int i = -1; i < 2; i++)
 			{
-				if (((curr.currX + i) == -1) || ((curr.currX + i) > resized.cols))// keeps from out of bounds error
+				if (((curr.currX + i) == -1) || ((curr.currX + i) > resized.cols))// keeps from out of bounds error on x axis using cols(?)
 				{
 					continue;
 				}
 				for (int y = -1; y < 2; y++)
 				{
-					if (((curr.currY + i) == -1) || ((curr.currY + i) > resized.rows))// keeps from out of bounds error
+					if (((curr.currY + i) == -1) || ((curr.currY + i) > resized.rows))// keeps from out of bounds error on y axis using rows
 					{
 						continue;
 					}
@@ -320,38 +329,69 @@ int main() {
 					{
 						continue;
 					}
+					//discover next node------------------------------------------ in its own function?
 					nextx = curr.currX + i;
 					nexty = curr.currY + y;
-					//calc next node------------------------------
 					next.currX = nextx;
 					next.currY = nexty;
 					next.Pval = curr.Pval + 1;
-					next.Hval = max(abs(nextx - end.currX), abs(nexty - end.currX));
+					next.Hval = abs(nextx - end.currX) + abs(nexty - end.currY);
+					if (next.Hval > curr.Hval)
+				    {
+						next.Hval = (next.Hval * 1.5);
+					}
 					next.value = int(resized.at<uchar>(nextx, nexty)); 
-					if ((next.value == 2) || (next.value < 250)) //2 closed no action, >250 is a black tile no action
+					next.prevX = curr.currX;
+					next.prevY = curr.currY;
+
+					//add to the a.star vectors----------------------
+					if (next.value == 100 || next.value == 0) //100 - closed: no action, < 100 - Black Tile: no action
 					{
 						continue;
 					}
-					next.prevX = curr.currX;
-					next.prevY = curr.currY;
-					//add to the a.star vectors----------------------
-				    if (next.value == 1)
+				    if (next.value == 200)//200 - has been discovered, is it better?
 					{
 						openReplace(open, next);
 					}
-					else
+					else//mark as discovered(200),  add to open list
 					{
+						resized.at<uchar>(nextx, nexty) = 200;
 						openInsert(open, next);
 					}
-					resized.at<uchar>(nextx, nexty) = 1;
+					
 				};
 			};
+			//close out current node(100), find next node from open vector(openSmallest)
+			resized.at<uchar>(curr.currX, curr.currY) = 100;
 			closed.insert(closed.begin(), curr);
+			curr = openSmallest(open, end);
 			openRemove(open, curr);
-			curr = openSmallest(open);
-			cout << curr.currX << ", " << curr.currY << endl;
+			//Debug----cout << curr.currX << ", " << curr.currY << "  Hval:" << curr.Hval << "  Pval:" << curr.Pval << endl;     
+			
 		}
+		imwrite("result.jpg", resized);
+		cv::imshow("resized", resized);
 		
+		int closeX = end.currX;
+		int closeY = end.currY;
+
+		for (int i = (int(closed.size()) - 1); i != 0; i--)
+		{
+			
+			src.at<uchar>(closeX * sideLen, closeY * sideLen) = 0;
+			if (i = (int(closed.size()) - 1))
+			{
+				closeX = closed[i].prevX;
+				closeY = closed[i].prevY;
+			}
+			else if ((closed[i].currX == closeX) && (closed[i].currY == closeY))
+			{
+				cout << "X: " << closeX << "   Y: " << closeY << "    Path: "<< closed[i].Pval << endl;
+				closeX = closed[i].prevX;
+				closeY = closed[i].prevY;
+			}
+		}
+		cv::imshow("Final", src);
 		cv::waitKey(0);                 // hold windows open until user presses a key
 		return(0);
 	}
@@ -361,23 +401,26 @@ int main() {
 		cv::waitKey(0);
 	}
 }
-//OPEN VECTOR MEMBER FUNCTIONS--------------------------------------
-node openSmallest(vector<node> &vec) //find smallest
-{
-	int index = 0;
-	node smallest = vec[0];
-	for (int i = 1; i < int(vec.size()); i++)
-	{
-		if (vec[i] < smallest)
-		{
-			smallest = vec[i];
-			index = i;
+//VECTOR OPEN<node>  MEMBER FUNCTIONS--------------------------------------
 
+//find smallest (Hval + Pval) in the open vector - O(n)
+node openSmallest(vector<node> &vec, node end) 
+{
+	node smallest = vec[0];
+	for(int i = 0; i < int(vec.size()); i++)
+	{
+		if (vec[i] <= smallest)
+		{
+			if (vec[i].Hval < smallest.Hval)//Tie Breaker: chose the smallest Hval among smallest nodes
+			{
+				smallest = vec[i];
+			}
 		}
 	}
-	vec.erase(vec.begin() + index);
 	return smallest;
 }
+
+//iterate throw open<node>, find matching (x,y) value, delete it- O(n)
 void openRemove(vector<node> &vec, node nod)
 {
 	for (vector<node>::iterator itr = vec.begin(); itr != vec.end(); itr++)
@@ -387,21 +430,29 @@ void openRemove(vector<node> &vec, node nod)
 			vec.erase(itr);
 			return;
 		}
-
 	}
 }
-void openReplace(vector<node> &vec, node nod)//replace node at equal coordinate
+
+//loop through open<node>, find matching (x,y) value, replace- O(n)
+void openReplace(vector<node> &vec, node nod)
 {
-	for (int i = 1; i < int(vec.size()); i++)
+	for (int i = 0; i < int(vec.size()); i++)
 	{
-		if ((vec[i].currX == nod.currX) && (vec[i].currY == nod.currY))
+		if ((vec[i].currX == nod.currX) && (vec[i].currY == nod.currY))//find node at equal coordinate
 		{
-			vec[i] = nod;
-			return;
+			if ((vec[i].Pval + vec[i].Hval) <= (nod.Pval + nod.Hval))
+			{
+				vec[i] = nod;
+				return;
+			}
+			else
+			{
+				return;
+			}
 		}
 	}
 }
-void openInsert(vector<node> &vec, node nod)//insert nodes in least to greatest
+void openInsert(vector<node> &vec, node nod)//insert nodes in open<node>, least -> greatest (Hval + Pval)
 {
 	if (int(vec.size()) == 0)
 	{
@@ -410,16 +461,17 @@ void openInsert(vector<node> &vec, node nod)//insert nodes in least to greatest
 	}
 	else if (int(vec.size()) > 0)
 	{
-		
 		for (vector<node>::iterator itr = vec.begin(); itr != vec.end(); itr++)
 		{
-			if ((itr->Hval + itr->Pval) > (nod.Hval + nod.Pval))
+			if ((nod.Hval + nod.Pval) <= (itr->Hval + itr->Pval))
 			{
 				vec.insert(itr, nod);
 				return;
 			}
-			
 		}
+		vec.push_back(nod);
+		return;
+		
 	}
 }
 
