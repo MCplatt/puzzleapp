@@ -34,7 +34,7 @@ Disign Doc
   - TODO: Find a good method for doing this, current method unreliable?
   
 
-=Impliment A* algorithm
+-Impliment A* algorithm
 	-create open vector
 		TODO: use priority cue
 	-create closed vector
