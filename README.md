@@ -2,31 +2,38 @@
 Personal project that is meant as a portfolio peace
 Disign Doc
 ------------------------------------------------
+- ## Create a node class for a pixel
+  - # including
+  - current position
+    - TODO:use single structure for x and y value
+  - previous position
+  - H value (distance from end)
+  - P value (path node value +1 from the previous node)
+  - T value (h+p) 
+  - # Init needs 		
+  - End node 
+    - TODO: Hard code into it (universal var?)
+  - previous node 
+  - Matrix location value
+			   
+- ## Process picture to make easier to process
+  - Convert picture to grayscale (values now range etween 0 and 254 for each pixel)
+  - Multiply image by 2
+  - Erode image (element 5x5, at point -1x-1)
+- ## Find avg size of maze line
+  - If img > 900x900
+    - Scan middle 300 lines (1/3> line <2/3)
+    - Record pixel size of line horizantally then vertically 
+  - If img < 900x900
+    - Scan 1/3 of the lines, horizontal then vertical
+    - Record pixel size of line horizantally then vertically
+  - Take horizontal and vertical line length avgs and find **line width** via tiangle height function
+  
 
-=convert picture to black and white
+- ## Resize the photo using (pixelamount)/(linewidth) for the x and y axis
+  - TODO: Find a good method for doing this, current method unreliable?
+  
 
-	-TODO: prod for doing this cess picture to be more easily/accuratly scanned
-=scan every (pixeltotal)/300 lines x and y axis ,
-	-TODO: have gaussian distrabution so more scans are near the middle of the photo to cut down on use less areas of the photo
-	=record when black tresh starts to when it stops and store in a vector
-		-TODO: Find proper threshold and make so its a unversal variable
-	=Find line width via triangle height function using lowerQuartile of x and y axis vectors
-		-TODO: Find better avrage of the vector
-=resize the photo using (pixelamount)/(linewidth) for the x and y axis
-	-TODO: Find a good method for doing this, current method unreliable?
-=Create a class for the pixel
-	-including
-			   --current position
-			   		TODO:use single structure for x and y value
-			   --previous position
-			   --H value (distance from end)
-			   --P value (path node value +1 from the previous node)
-			   --T value (h+p) 
-	-needs 		
-			   --End node 
-			   		-TODO: Hard code into it (universal var?)
-			   --previous node 
-			   --matrix location value
 =Impliment A* algorithm
 	-create open vector
 		TODO: use priority cue
