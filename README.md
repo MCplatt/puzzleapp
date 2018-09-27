@@ -3,14 +3,14 @@ Personal project that is meant as a portfolio peace
 Disign Doc
 ------------------------------------------------
 - ## Create a node class for a pixel
-  - # including
+  - ### including
   - current position
     - TODO:use single structure for x and y value
   - previous position
   - H value (distance from end)
   - P value (path node value +1 from the previous node)
   - T value (h+p) 
-  - # Init needs 		
+  - ### Init needs 		
   - End node 
     - TODO: Hard code into it (universal var?)
   - previous node 
