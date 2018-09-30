@@ -106,16 +106,15 @@ int main() {
 		//cv::namedWindow("imgGrayscale", CV_WINDOW_NORMAL);        // or CV_WINDOW_AUTOSIZE for a fixed size window matching the resolution of the image
 		//cv::imshow("imgGrayscale", imgGrayscale);
 
-		cv::multiply(imgGrayscale,2, imgMulty);
+		cv::multiply(imgGrayscale,2, imgMulty);                    //smooths out the image (doc scanning technique)
 
 		//cv::namedWindow("imgMulty", CV_WINDOW_NORMAL);        // or CV_WINDOW_AUTOSIZE for a fixed size window matching the resolution of the image
 		//cv::imshow("imgMulty", imgMulty);
 
 		cv::imwrite("imgTest.png", imgMulty);
 
-		//cv:Mat kernal(2, 2, CV_8UC3, Scalar(1));
 		int erosion_type = 1;
-		Mat element = getStructuringElement(erosion_type,Size(5,5),Point(-1,-1));
+		Mat element = getStructuringElement(erosion_type,Size(5,5),Point(-1,-1));// increases size of black lines, makes them thicker
 		erode(imgMulty, imgEroded, element);
 		
 		cv::imwrite("imgTest.png", imgEroded);
@@ -131,7 +130,7 @@ int main() {
 		int ColIterStart = 0;
 		int RowEnd;
 		int ColEnd;
-		if ((src.rows < 900) || (src.cols < 900))//if the image is less than 600x600 px scan whole pic
+		if ((src.rows < 900) || (src.cols < 900))//if the image is less than 900x900 px scan whole pic
 		{
 			RowIter = (src.rows / 300);
 			ColIter = (src.cols / 300);
@@ -158,43 +157,35 @@ int main() {
 		{
 			ColIter = 1;
 		}
-		//Scan Rows----------------
-		for (int x = RowIterStart; x < RowEnd; (x += RowIter)) {
+		//Scan Rows--------------------------------------------------------------------
+		for (int y = RowIterStart; y < RowEnd; (y += RowIter)) {
 			//std::cout << "row" <<  std::endl;
-			for (int y = ColIterStart; y < ColEnd; (y += ColIter)) {
+			for (int x = ColIterStart; x < ColEnd; (x += 1)) {
 				//std::cout << int(src.at<uchar>(x, y)) << " ";
 				if (int(src.at<uchar>(x, y)) < thresh) {
 					count++;
 				}
-				if ((int(src.at<uchar>(x, y - 1)) <= thresh) && (int(src.at<uchar>(x, y)) > thresh)) {
-					if (count == 0)
-					{
-
-					}
+				if ((int(src.at<uchar>(x - 1 ,y)) <= thresh) && (int(src.at<uchar>(x, y)) > thresh)) {
+					if (count == 0){}
 					else
 					{
 						widths.push_back(count);
 						count = 0;
 					}
-					
 				}
-
 			}
 		}
 		count = 0;
-		//Scan Columns------------------- 
+		//Scan Columns-------------------------------------------------------------
 		for (int x = ColIterStart; x < ColEnd ; (x += ColIter)) {
 			//std::cout << "row" << std::endl;
-			for (int y = RowIterStart; y < RowEnd; (y += RowIter)) {
+			for (int y = RowIterStart; y < RowEnd; (y += 1)) {
 				//std::cout << int(src.at<uchar>(y, x)) << " ";
-				if (int(src.at<uchar>(y, x)) < thresh) {
+				if (int(src.at<uchar>(x, y)) < thresh) {
 					count++;
 				}
-				if ((int(src.at<uchar>(y - 1, x)) <= thresh) && (int(src.at<uchar>(y, x)) > thresh)) {
-					if (count == 0)
-					{
-
-					}
+				if ((int(src.at<uchar>(x, y - 1)) <= thresh) && (int(src.at<uchar>(x, y)) > thresh)) {
+					if (count == 0){}
 					else
 					{
 						heights.push_back(count);
@@ -207,21 +198,21 @@ int main() {
 		}
 
 		std::cout << "----------------------------Widths-------------------------      " << std::endl;
+		std::cout << endl;
 		int k = 0;
 		int median = 0;
 		int lowerQT = 0;
 		for (k = 0; k < widths.size(); k++)
 		{
-			//std::cout << widths[k] << " ";
+			std::cout << widths[k] << " ";
 			median = median + widths[k];
 			
 		}
-		median = median / widths.size();
-		cout << endl;
+		median = median / widths.size();//calculate the median
+		
 		std::cout << "LOWER Q" << std::endl;
-		int j = 0;
 		int lowerSize = 0;
-		for (j = 0; j < widths.size(); j++)
+		for (int j = 0; j < widths.size(); j++)
 		{
 			if (widths[j] < median)
 			{
@@ -231,7 +222,7 @@ int main() {
 			}
 		}
 		std::cout << "   SizeLQ     " << widths.size()/2 << " " << endl;
-		std::cout << "   Lower Quartile   " << lowerQT / lowerSize << " " << endl;
+		std::cout << "   Lower Quartile   " << lowerQT / lowerSize << " " << endl;//calculate the median of the lower half of the recorded widths (Lower Quartile)
 		std::cout << "   SizeM     " << widths.size() << " " << endl;
 		std::cout << "   MEDIAN   "<< median << " " << endl;
 		int Wmed = median;
@@ -249,9 +240,9 @@ int main() {
 		median = median / heights.size();
 		cout << endl;
 		std::cout << "LOWER Q" << std::endl;
-		j = 0;
+
 		lowerSize = 0;
-		for (j = 0; j < heights.size(); j++)
+		for (int j = 0; j < heights.size(); j++)
 		{
 			if (heights[j] < median)
 			{
@@ -300,7 +291,7 @@ int main() {
 		//cv::imshow("resized", resized);
 		//imwrite("result.jpg", resized);
 
-		cv::namedWindow("Output Window");
+		cv::namedWindow("Output Window", CV_WINDOW_NORMAL);
 		vector<Point> points;
 		cv::setMouseCallback("Output Window", onMouse, (void*)&points);
 		int X, Y;
@@ -345,15 +336,14 @@ int main() {
 		node next;
 		int nextx;
 		int nexty;
-
+		bool openFlag = true;
 		
 		//A* Algorithm ------------------------------------
 		//loops from node to node till the current node is the end node
-
 		vector<node> closed; //nodes that have been touched
 		vector<node> open; // adjacent nodes that have been discovered
 	    //while c is not at the end node
-		while (end != curr) 
+		while (end != curr || openFlag) 
 		{
 			if ((curr.currX == 239) && (curr.currY == 1))
 			{int pie = 0;} // stops a certain node
@@ -380,7 +370,7 @@ int main() {
 					nexty = curr.currY + y;
 					next.currX = nextx;
 					next.currY = nexty;
-					if (((i == -1) && (y == -1)) || ((i == 1) && (y == 1)) || ((i == -1) && (y == 1)) || ((i == 1) && (y == -1)))
+					if (((i == -1) && (y == -1)) || ((i == 1) && (y == 1)) || ((i == -1) && (y == 1)) || ((i == 1) && (y == -1)))//make diagnal path cost a bit more
 					{
 						next.Pval = curr.Pval + 1.5;
 					}
@@ -389,7 +379,6 @@ int main() {
 						next.Pval = curr.Pval + 1;
 					}
 					next.Hval = abs(nextx - end.currX) + abs(nexty - end.currY);
-
 					if (next.Hval > curr.Hval)
 				    {
 						next.Hval = (next.Hval * 1.5);
@@ -419,7 +408,7 @@ int main() {
 			resized.at<uchar>(curr.currX, curr.currY) = 100;
 			closed.insert(closed.begin(), curr);
 			curr = openSmallest(open, end);
-			openRemove(open, curr);
+		    openRemove(open, curr);
 			cout << curr.currX << ", " << curr.currY << "  Hval:" << curr.Hval << "  Pval:" << curr.Pval << endl;     
 			cv::imshow("resized", resized);
 			cv::waitKey(1);
@@ -428,29 +417,26 @@ int main() {
 		imwrite("result.jpg", resized);
 		int rowScaler = imgOriginal.rows / resized.rows;
 		int colScaler = imgOriginal.cols / resized.cols;
+		//Display the correct path------------------------------------------------------
 		cv::namedWindow("Final", CV_WINDOW_NORMAL);
 		int closeX = end.currY;
 		int closeY = end.currX;
 		//cv::waitKey(0);
-		for (int i = 0; i < int(closed.size()); i++)
+		for (int i = 0; i < int(closed.size()); i++)//iterate through the closed points
 		{
-			
-			//imgGrayscale.at<uchar>(closeX * rowScaler, closeY * colScaler) = 0;
-			points[0] = Point(closeX * colScaler, closeY * rowScaler);
-
-			
-			if (i == 0)
+			points[0] = Point(closeX * colScaler , closeY * rowScaler);			
+			if (i == 0)//for the first point initialize the point set 
 			{
 				
 				closeX = closed[i].prevY;
 				closeY = closed[i].prevX;
 				points[1] = Point(closeX * colScaler, closeY * rowScaler);
-				line(imgOriginal,points[0],points[1], Scalar(0, 0, 255) , sideLen ,0 );
+				line(imgOriginal,points[0],points[1], Scalar(0, 0, 255) , sideLen ,0 );//draws a line
 			}
-			else if ((closed[i].currX == closeY) && (closed[i].currY == closeX))
+			else if ((closed[i].currX == closeY) && (closed[i].currY == closeX))//when the (x,y) cords match the previous cordinates 
 			{
 				cout << "X: " << closeX << "   Y: " << closeY << "    Path: "<< closed[i].Pval << endl;
-				closeX = closed[i].prevY;
+				closeX = closed[i].prevY;//update point set
 				closeY = closed[i].prevX;
 				points[1] = Point(closeX * colScaler, closeY * rowScaler);
 				line(imgOriginal, points[0], points[1], Scalar(0, 0, 255), sideLen, 0);
@@ -542,24 +528,3 @@ void openInsert(vector<node> &vec, node nod)//insert nodes in open<node>, least 
 		
 	}
 }
-
-/*
-void nodeCalc(Mat &src, node &curr,node &prev, node &exit)
-{
-	if (curr.value == -2 || curr.value == 0)//if already closed(-2) or wall (0) do nothing
-	{
-		
-	}
-	else if (curr.value == 255 || curr.value == -1)// if open space(255) or calculated open(-1)
-	{
-		curr.value = -1;  //set as calculated open
-		int dx = std::abs(curr.currX - exit.currX);//calc x hueristic
-		int dy = std::abs(curr.currY - exit.currY);//calc y heuristic
-		curr.Hval = std::max(dx, dy);// furthest axis is the h val( because every direction is an equal move cost)
-		curr.Pval = prev.Pval + 1; //calculate the path from the previous node
-		curr.prevX = prev.currX;//link to prev node for end retrace
-		curr.prevY = prev.currY;
-	}
-	
-}
-*/
