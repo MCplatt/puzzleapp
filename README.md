@@ -44,19 +44,17 @@ Disign Doc
     - set start = curr
   - ### algorithm
     - start while loop(while curr node != end node)
-    - for loop (for each surrounding node)
-      - TODO:find way to easily loop through surrounding nodes
-    - calculate the node values
-    - add node to open 
-    - put curr in closed
-    - scan open for smallest T value set as curr(if two are the same use smallest H or first arbitrary)
-    - TODO:use the closed list to trace back the nodes from the curr node
-    - make final vector
-    - while (curr != start)
+      - for loop (for each surrounding node)
+        - TODO:find way to easily loop through surrounding nodes
+      - calculate the node values
+      - add node to open 
+      - put curr in closed
+      - scan open for smallest T value set as curr(if two are the same use smallest H or first arbitrary)
+      - add to final vector
     - take curr's prevX/Y and find it in closed list
-    - set as the curr node
-    - add to final vector
-      - TODO:make the value of each point relative to the full sized picture
+      - set as the curr node
+      - add to final vector
+        - TODO:make the value of each point relative to the full sized picture
   - ### Display result
     - multiply each x and y by the scaling factor (better method needed?)
       - TODO:color each point red and surrounding yellow
